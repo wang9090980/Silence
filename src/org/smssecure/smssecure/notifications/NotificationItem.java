@@ -19,6 +19,8 @@ public class NotificationItem {
   private final @NonNull  Recipient         individualRecipient;
   private final @Nullable Recipients        threadRecipients;
   private final long                        threadId;
+  private final long                        messageId;
+  private final boolean                     isMms;
   private final @Nullable CharSequence      text;
   private final long                        timestamp;
   private final @Nullable SlideDeck         slideDeck;
@@ -26,12 +28,15 @@ public class NotificationItem {
   public NotificationItem(@NonNull   Recipient individualRecipient,
                           @NonNull   Recipients recipients,
                           @Nullable  Recipients threadRecipients,
-                          long threadId, @Nullable CharSequence text, long timestamp,
+                          long threadId, long messageId, boolean isMms,
+                          @Nullable CharSequence text, long timestamp,
                           @Nullable SlideDeck slideDeck)
   {
     this.individualRecipient = individualRecipient;
     this.recipients          = recipients;
     this.threadRecipients    = threadRecipients;
+    this.messageId           = messageId;
+    this.isMms               = isMms;
     this.text                = text;
     this.threadId            = threadId;
     this.timestamp           = timestamp;
@@ -56,6 +61,14 @@ public class NotificationItem {
 
   public long getThreadId() {
     return threadId;
+  }
+
+  public long getMessageId(){
+    return this.messageId;
+  }
+
+  public boolean isMms(){
+    return this.isMms;
   }
 
   public @Nullable SlideDeck getSlideDeck() {

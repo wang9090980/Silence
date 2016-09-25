@@ -19,6 +19,8 @@ import java.util.Set;
 
 public class NotificationState {
 
+  private static final String TAG = NotificationState.class.getSimpleName();
+
   private final LinkedList<NotificationItem> notifications = new LinkedList<>();
   private final Set<Long>                    threads       = new HashSet<>();
 
@@ -75,7 +77,6 @@ public class NotificationState {
     int    index       = 0;
 
     for (long thread : threads) {
-      Log.w("NotificationState", "Added thread: " + thread);
       threadArray[index++] = thread;
     }
 
@@ -86,8 +87,41 @@ public class NotificationState {
     // XXX : This is an Android bug.  If we don't pull off the extra
     // once before handing off the PendingIntent, the array will be
     // truncated to one element when the PendingIntent fires.  Thanks guys!
-    Log.w("NotificationState", "Pending array off intent length: " +
-        intent.getLongArrayExtra("thread_ids").length);
+    Log.i(TAG, "Pending thread id array of intent length: " +
+        intent.getLongArrayExtra(MarkReadReceiver.THREAD_IDS_EXTRA).length);
+
+    return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+  }
+
+  public PendingIntent getDeleteIntent(Context context){
+
+    long[]    idArray     = new long[notificationCount];
+    boolean[] isMmsArray  = new boolean[notificationCount];
+    long[]    threadArray = new long[threads.size()];
+    int       index       = 0;
+
+    for (NotificationItem notificationItem : notifications) {
+      isMmsArray[index] = notificationItem.isMms();
+      idArray[index++]  = notificationItem.getMessageId();
+    }
+    index = 0;
+    for (long thread : threads) {
+      threadArray[index++] = thread;
+    }
+
+    Intent intent = new Intent(DeleteReceiver.DELETE_ACTION);
+    intent.putExtra(DeleteReceiver.MSG_IDS_EXTRA, idArray);
+    intent.putExtra(DeleteReceiver.MSG_IS_MMS_EXTRA, isMmsArray);
+    intent.putExtra(DeleteReceiver.THREAD_IDS_EXTRA, threadArray);
+    intent.setPackage(context.getPackageName());
+
+    // XXX : This is an Android bug (same as above)
+    Log.i(TAG, "Pending id array of intent length: " +
+            intent.getLongArrayExtra(DeleteReceiver.MSG_IDS_EXTRA).length);
+    Log.i(TAG, "Pending mms array of intent length: " +
+            intent.getBooleanArrayExtra(DeleteReceiver.MSG_IS_MMS_EXTRA).length);
+    Log.i(TAG, "Pending thread id array of intent length: " +
+            intent.getLongArrayExtra(DeleteReceiver.THREAD_IDS_EXTRA).length);
 
     return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
   }
@@ -105,13 +139,11 @@ public class NotificationState {
   public PendingIntent getQuickReplyIntent(Context context, Recipients recipients) {
     if (threads.size() != 1) throw new AssertionError("We only support replies to single thread notifications!");
 
-    Intent     intent           = new Intent(context, ConversationPopupActivity.class);
+    Intent intent = new Intent(context, ConversationPopupActivity.class);
     intent.putExtra(ConversationActivity.RECIPIENTS_EXTRA, recipients.getIds());
     intent.putExtra(ConversationActivity.THREAD_ID_EXTRA, (long)threads.toArray()[0]);
     intent.setData((Uri.parse("custom://"+System.currentTimeMillis())));
 
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
   }
-
-
 }

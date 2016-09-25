@@ -27,7 +27,7 @@ public class MarkReadReceiver extends MasterSecretBroadcastReceiver {
     final long[] threadIds = intent.getLongArrayExtra(THREAD_IDS_EXTRA);
 
     if (threadIds != null) {
-      Log.w("TAG", "threadIds length: " + threadIds.length);
+      Log.w(TAG, "threadIds length: " + threadIds.length);
 
       MessageNotifier.cancelNotification(context);
 

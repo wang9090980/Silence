@@ -237,7 +237,8 @@ public class MessageNotifier {
     builder.addActions(masterSecret,
                        notificationState.getMarkAsReadIntent(context),
                        notificationState.getQuickReplyIntent(context, notifications.get(0).getRecipients()),
-                       notificationState.getWearableReplyIntent(context, notifications.get(0).getRecipients()));
+                       notificationState.getWearableReplyIntent(context, notifications.get(0).getRecipients()),
+                       notificationState.getDeleteIntent(context));
 
     ListIterator<NotificationItem> iterator = notifications.listIterator(notifications.size());
 
@@ -270,7 +271,8 @@ public class MessageNotifier {
     long timestamp = notifications.get(0).getTimestamp();
     if (timestamp != 0) builder.setWhen(timestamp);
 
-    builder.addActions(notificationState.getMarkAsReadIntent(context));
+    builder.addActions(notificationState.getMarkAsReadIntent(context),
+                       notificationState.getDeleteIntent(context));
 
     ListIterator<NotificationItem> iterator = notifications.listIterator(0);
 
@@ -350,6 +352,8 @@ public class MessageNotifier {
       Recipient    recipient        = record.getIndividualRecipient();
       Recipients   recipients       = record.getRecipients();
       long         threadId         = record.getThreadId();
+      long         messageId        = record.getId();
+      boolean      isMms            = record.isMms();
       CharSequence body             = record.getDisplayBody();
       Recipients   threadRecipients = null;
       SlideDeck    slideDeck        = null;
@@ -361,10 +365,10 @@ public class MessageNotifier {
 
       if (SmsDatabase.Types.isDecryptInProgressType(record.getType()) || !record.getBody().isPlaintext()) {
         body = SpanUtil.italic(context.getString(R.string.MessageNotifier_encrypted_message));
-      } else if (record.isMms() && TextUtils.isEmpty(body)) {
+      } else if (isMms && TextUtils.isEmpty(body)) {
         body = SpanUtil.italic(context.getString(R.string.MessageNotifier_media_message));
         slideDeck = ((MediaMmsMessageRecord)record).getSlideDeck();
-      } else if (record.isMms() && !record.isMmsNotification()) {
+      } else if (isMms && !record.isMmsNotification()) {
         String message      = context.getString(R.string.MessageNotifier_media_message_with_text, body);
         int    italicLength = message.length() - body.length();
         body = SpanUtil.italic(message, italicLength);
@@ -372,7 +376,8 @@ public class MessageNotifier {
       }
 
       if (threadRecipients == null || !threadRecipients.isMuted()) {
-        notificationState.addNotification(new NotificationItem(recipient, recipients, threadRecipients, threadId, body, timestamp, slideDeck));
+        notificationState.addNotification(new NotificationItem(recipient, recipients, threadRecipients,
+                threadId, messageId, isMms, body, timestamp, slideDeck));
       }
     }
 
